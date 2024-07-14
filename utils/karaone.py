@@ -26,8 +26,8 @@ from rich.rule import Rule
 from rich.table import Table
 from scipy.spatial.distance import cdist
 
-from utils.dataset import DatasetLoader
-from utils.features import FeatureFunctions
+from ttt.utils.dataset import DatasetLoader
+from ttt.utils.features import FeatureFunctions
 
 all_subjects = [
     "MM05",
@@ -80,6 +80,7 @@ class KaraOneDataLoader(DatasetLoader):
         """Download database from website"""
 
         def download_subject(subject):
+            print("DOWNLOAD FILE:", subject, "...")
             file_url = f"{base_url}{subject}.tar.bz2"
             filename = os.path.join(self.raw_data_dir, f"{subject}.tar.bz2")
 
@@ -158,17 +159,39 @@ class KaraOneDataLoader(DatasetLoader):
     def load_raw_data(self, subject, verbose=None):
         """Load the raw EEG data from the KaraOne folder"""
         self.subject = subject
+        print("WORKING ON RAW DATA: " + subject)
         verbose = verbose if verbose is not None else self.verbose
         if verbose:
             self.console.print(f"Subject: [purple]{subject}[/]")
             self.console.print(Rule())
 
         data_dir = self.raw_data_dir
+        print(f"DATA DIR {data_dir} subject {subject}")
+
         eeglab_raw_filename = glob.glob(os.path.join(data_dir, subject, "*.set"))
+        print(f"FILENAME {eeglab_raw_filename}")
+
         eeglab_raw_file = os.path.join(data_dir, subject, eeglab_raw_filename[0])
+        print(f"RAW FILE {eeglab_raw_file}")
+
         self.raw = mne.io.read_raw_eeglab(
-            eeglab_raw_file, montage_units="mm", verbose=verbose or "critical"
+            input_fname=eeglab_raw_file, montage_units="mm", verbose=verbose or "critical"
         )
+
+        def replace_invalid_values(data):
+            if isinstance(data, np.ndarray):
+                invalid_mask = np.isnan(data) | np.isinf(data)  # Mask for NaNs and infinite values
+                if np.any(invalid_mask):
+                    if verbose:
+                        self.console.print(f"[warning] Replacing {invalid_mask.sum()} invalid values in EEG data.")
+                    data[invalid_mask] = 0  # Or another suitable replacement value
+            elif isinstance(data, dict):
+                for key, value in data.items():
+                    data[key] = replace_invalid_values(value)
+            elif isinstance(data, list):
+                data = [replace_invalid_values(item) for item in data]
+            return data
+        self.raw_data = replace_invalid_values(self.raw.get_data())
 
         return self.raw
 
@@ -439,6 +462,7 @@ class KaraOneDataLoader(DatasetLoader):
         overwrite=False,
         verbose=False,
     ):
+        print("PROCESS RAW DATA..")
         self.verbose = verbose
         self.data_dir = save_dir
 
@@ -448,9 +472,10 @@ class KaraOneDataLoader(DatasetLoader):
                 total=len(self.subjects),
                 completed=1,
             )
-            task_filter = self.progress.add_task("Applying Laplacian filter ...")
+            self.progress.add_task("Applying Laplacian filter ...")
 
             for subject in self.subjects:
+                print("SUBJECT ", subject)
                 if not overwrite and os.path.exists(
                     os.path.join(self.data_dir, subject, "raw.fif")
                 ):

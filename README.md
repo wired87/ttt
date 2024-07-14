@@ -39,7 +39,7 @@ For Windows: Download and install Graphviz from the [Graphviz website](https://g
 
 The configuration file `config.yaml` contains the paths to the data files and the parameters for the different workflows.
 Create and populate it with the appropriate values.
-Refer to [config-template.yaml](config-template.yaml).
+Refer to [config-template.yaml](config.yaml).
 
 ```yaml
 ---

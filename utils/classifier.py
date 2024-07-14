@@ -2,7 +2,7 @@
 classifier.py
 Classifier Utility scripts
 """
-
+from sklearn.svm import SVC
 import importlib.util
 import os
 import time
@@ -30,7 +30,7 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
-from sklearn.model_selection import GridSearchCV, cross_validate, train_test_split
+from sklearn.model_selection import GridSearchCV, train_test_split
 
 
 class ClassifierMixin:
@@ -84,6 +84,7 @@ class ClassifierMixin:
         if reload or not self.model_config:
             if not model_file:
                 model_file = os.path.join(self.save_dir, "model.py")
+                print(f"MODEL FILE: {model_file}")
             if not os.path.exists(model_file):
                 raise FileNotFoundError(f"Model file '{model_file}' not found.")
             spec = importlib.util.spec_from_file_location("model", model_file)
@@ -103,7 +104,8 @@ class ClassifierMixin:
             if not hasattr(self.model_config, "resample"):
                 return None
             sampler = self.model_config.resample()
-            sampler.random_state = self.random_state
+            if sampler:
+                sampler.random_state = self.random_state
 
         self.sampler = sampler
         return self.sampler
@@ -130,16 +132,22 @@ class ClassifierMixin:
             pipeline = self.model_config.pipeline()
 
         self.pipeline = pipeline
+        print(f"RETIURN PIPELINE:{self.pipeline} FRM  get_pipeline...")
         return self.pipeline
 
     def apply_pipeline(self, X, pipeline=None, verbose=None):
-        verbose = self.set_verbose(verbose)
+        #verbose = self.set_verbose(verbose)
 
         if not hasattr(self, "pipeline"):
+            print("NO PIPE, CREATE ONE...")
             self.pipeline = self.get_pipeline(pipeline)
-
+        index = 1
         if self.pipeline:
+            print(f"PIPELINE {self.pipeline}")
             for transform in self.pipeline:
+                print(f"INDEXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX{index}")
+                index += 1
+                print(f"TFORM {transform} \n {type(transform)}")
                 X = transform.fit_transform(X)
         return X
 
@@ -221,11 +229,17 @@ class ClassifierMixin:
             elif score_func == "f_classif":
                 self.score_func = f_classif
             return self.score_func
+        print("UPDATE ITEMS", type(X))
+        for item in X:
+              # For debugging, you can comment this out later
 
+            # Replace NaNs with a desired value (e.g., 0)
+            item[np.isnan(item)] = 0
+        print("ITEMS UPDATED...")
         if k_best is not None:
             fetch_score_func(k_best["score_func"])
             if self.score_func:
-                selector = SelectKBest(score_func=self.score_func, k=k_best["k"])
+                selector = SelectKBest(score_func=self.score_func, k="all")
                 X = selector.fit_transform(X, y)
                 select_indices = selector.get_support(indices=True)
                 self.features_names = self.features_names[select_indices]
@@ -518,7 +532,7 @@ class RegularClassifier(ClassifierMixin):
         self.get_scoring()
         self.get_model_config()
         self.model = model if model else self.model_config.model()
-        self.cv = cv if cv else self.model_config.cross_validation()
+        self.cv = cv if cv else self.model_config.cross_validation(n_splits=self.n_splits, test_size=self.test_size)
         self.model.random_state = self.random_state
         self.cv.random_state = self.random_state
         self.cv.test_size = self.test_size
@@ -530,6 +544,9 @@ class RegularClassifier(ClassifierMixin):
 
     def train(self, verbose=None):
         verbose = self.set_verbose(verbose)
+        for item in self.X_train:
+            item[np.isnan(item)] = 0
+            #print("type, value:", type(item), item)
         self.model.fit(self.X_train, self.y_train)
 
     def evaluate(self, X=None, y=None, model=None, show_plots=False, verbose=None):
@@ -543,6 +560,9 @@ class RegularClassifier(ClassifierMixin):
         y_test = self.get_value(y, self.y_test)
 
         self.get_model(model)
+        for item in X_test:
+            item[np.isnan(item)] = 0
+            #print("type, value:", type(item), item)
         self.y_pred = self.model.predict(X_test)
 
         if verbose:
@@ -826,7 +846,8 @@ class EvaluateClassifier(ClassifierMixin):
             )
             self.X = np.concatenate((X_train, X_test))
             self.y = np.concatenate((y_train, y_test))
-
+        else:
+            print("Invalid params...")
         self.X = self.apply_pipeline(X=self.X)
         self.X = self.select_features(k_best=self.features_select_k_best)
         self.get_anova_f()

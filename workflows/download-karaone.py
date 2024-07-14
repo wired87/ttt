@@ -7,8 +7,8 @@ import os
 import sys
 
 sys.path.append(os.getcwd())
-from utils.config import Config
-from utils.karaone import KaraOneDataLoader
+from ttt.utils.config import Config
+from ttt.utils.karaone import KaraOneDataLoader #FEISDataLoader
 
 
 def main(args):

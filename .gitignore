@@ -10,6 +10,6 @@ files/
 notebooks/
 
 config*.yaml
-!config-template.yaml
+!config.yaml
 config*.toml
 !config-template.toml

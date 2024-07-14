@@ -7,26 +7,28 @@ import argparse
 import os
 from typing import Any, Callable, Dict, Optional, Type, Union
 
-import toml
+
 import yaml
 from rich.console import Console
 from rich.rule import Rule
 from rich.traceback import install
 
-from utils.classifier import ClassifierGridSearch, EvaluateClassifier, RegularClassifier
-from utils.feis import FEISDataLoader
-from utils.karaone import KaraOneDataLoader
+from ttt.utils.classifier import ClassifierGridSearch, EvaluateClassifier, RegularClassifier
+from ttt.utils.feis import FEISDataLoader
+from ttt.utils.karaone import KaraOneDataLoader
 
 install()
 ConfigValue = Optional[Union[dict, list, str, int, float, Any]]
 
-
+# C:\Users\wired\OneDrive\Desktop\Projects\ttt\ttt\config.yaml
 class Config:
     """Class to manage configuration settings"""
 
-    def __init__(self, file: str = "config.yaml", verbose: bool = True):
-        self.file: str = file
-        if not os.path.exists(self.file):
+    def __init__(self, file: str = r"C:\Users\wired\OneDrive\Desktop\Projects\ttt\ttt\config.yaml", verbose: bool = True):
+        print("FUILE:", file)
+        self.file: str = os.path.join(r"C:\Users\wired\OneDrive\Desktop\Projects\ttt\ttt\config.yaml")
+        print("self.file", self.file)
+        if not os.path.isfile(self.file):
             raise FileNotFoundError(f"Configuration file not found: {self.file}")
         self.config: dict = self.load()
         if verbose:
@@ -52,7 +54,8 @@ class Config:
         """Load configuration settings from a YAML or TOML file"""
         with open(self.file, "r") as f:
             if self.file.endswith(".toml"):
-                config = toml.load(f)
+                print("TOMLLLL")
+                #config = toml.load(f)
             elif self.file.endswith(".yaml") or self.file.endswith(".yml"):
                 config = yaml.safe_load(f)
             else:
@@ -124,5 +127,5 @@ class ConsoleHandler(Console):
         - file: The path to the file where the console output will be saved.
         - mode: The mode in which the file will be opened. Defaults to "w" (write mode).
         """
-        with open(file, mode) as file_handle:
+        with open(file, mode, encoding='utf-8') as file_handle:
             file_handle.write(self.export_text())

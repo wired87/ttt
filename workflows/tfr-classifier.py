@@ -11,8 +11,8 @@ import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
-from utils.config import Config, fetch_dataset
-from utils.tfr import TFRDataset
+from ttt.utils.config import Config, fetch_dataset
+from ttt.utils.tfr import TFRDataset
 
 tf.keras.backend.clear_session()
 print("Num GPUs Available: ", len(tf.config.list_physical_devices("GPU")))

@@ -1,0 +1,37 @@
+# Configuration for Thought-to-Text Decoder Model
+
+_select:
+  classifier: RegularClassifier  # Start with evaluating existing models RegularClassifier, ClassifierGridSearch, EvaluateClassifier
+  dataset: KaraOne                # Choose your primary dataset
+
+classifier:
+  features_select_k_best:
+    k: [5, 10, 15]                # Test multiple 'k' values for optimal feature selection
+    score_func: f_classif         # Use ANOVA F-value for feature ranking
+  model_base_dir: C:\Users\wired\OneDrive\Desktop\Projects\ttt\ttt\files\models    # Path to your trained models
+  models: [model_1, model_2]      # List specific model folders within the base directory
+  n_splits: 5                     # Standard 5-fold cross-validation
+  random_state: 42                # Reproducibility seed
+  test_size: 0.2                  # Typical 80/20 split for training/testing
+  trial_size: null                # Use the full dataset for evaluation (no sampling)
+
+feis:                     # FEIS dataset configuration (likely unused initially)
+  epoch_type: thinking      # If using, focus on thought-related epochs
+  features_dir: files/Features/FEIS/features-1/ 
+  raw_data_dir: files/Data/FEIS/data_eeg/
+  subjects: all            # Start with all subjects for broader training
+  tasks: [0]                # Only task 0 is available in FEIS
+
+karaone:                  # KaraOne dataset configuration (the focus)
+  epoch_type: thinking      # Most relevant for thought-to-text
+  features_dir: files/Features/KaraOne/features/
+  filtered_data_dir: files/Data/KaraOne/filtered_data/  # Assumes pre-filtered data
+  length_factor: 0.5       # Adjust window length based on data specifics
+  overlap: 0.2             # Moderate overlap to capture transitions
+  raw_data_dir: C:\Users\wired\OneDrive\Desktop\Projects\ttt\ttt\workflows\files\Data\KaraOne\EEG_raw #ttt/workflows/files/Data/KaraOne/EEG_raw/         # For raw data, if needed
+  subjects: all            # Initial training on all subjects
+  tasks: [0, 1, 2, 3]       # Experiment with different KaraOne tasks
+  tfr_dataset_dir: files/TFR/KaraOne/tfr_ds-1/    # If using time-frequency representations
+
+utils:
+  path: /path/to/your/project/utils/

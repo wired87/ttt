@@ -112,7 +112,7 @@ class FeatureFunctions:
         def detrended_fluctuation(x: np.ndarray) -> float:
             return ant.detrended_fluctuation(x)
 
-        feature_functions: List[Callable[[np.ndarray], float]] = [
+        feature_functions: List[Callable[[np.ndarray], float] or None] = [
             mean,
             absmean,
             maximum,

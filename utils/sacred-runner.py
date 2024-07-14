@@ -12,7 +12,7 @@ sys.path.append(os.getcwd())
 from sacred import Experiment
 from sacred.observers import FileStorageObserver
 
-from utils.config import Config
+from ttt.utils.config import Config
 
 
 class SacredRunner:

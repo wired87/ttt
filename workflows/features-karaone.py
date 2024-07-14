@@ -7,8 +7,8 @@ import os
 import sys
 
 sys.path.append(os.getcwd())
-from utils.config import Config
-from utils.karaone import KaraOneDataLoader
+from ttt.utils.config import Config
+from ttt.utils.karaone import KaraOneDataLoader
 
 
 def main(args):
@@ -27,7 +27,7 @@ def main(args):
     elif d_args["epoch_type"] in ["clearing", "thinking", "stimuli", "speaking"]:
         karaone.process_raw_data(
             save_dir=d_args["filtered_data_dir"],
-            pick_channels=d_args["channels"],
+            # pick_channels=d_args["channels"],?
             l_freq=0.5,
             h_freq=50.0,
             overwrite=False,
