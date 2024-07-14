@@ -5,7 +5,9 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/AshrithSagar/EEG-Imagined-speech-recognition/badge)](https://www.codefactor.io/repository/github/AshrithSagar/EEG-Imagined-speech-recognition)
 
 Imagined speech recognition through EEG signals
-# Original repo can be foun [here](https://github.com/AshrithSagar/EEG-Imagined-speech-recognition) 
+
+# Original repo can be found [here](https://github.com/AshrithSagar/EEG-Imagined-speech-recognition) 
+
 ## Installation
 
 Follow these steps to get started.
