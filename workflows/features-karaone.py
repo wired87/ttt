@@ -48,7 +48,7 @@ def main(args):
         epoch_type=d_args["epoch_type"],
         length_factor=d_args["length_factor"],
         overlap=d_args["overlap"],
-        skip_if_exists=True,
+        skip_if_exists=False,
     )
 
     features = karaone.load_features(epoch_type=d_args["epoch_type"], verbose=True)

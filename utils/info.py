@@ -1,6 +1,20 @@
 """
 info.py
 Info Utility scripts
+
+1. Model
+
+
+
+
+- Workflow: Daten werden von gerät generiert -> an backend gestreamt, modell checkt und bergibt decodet an g_assi_api
+- fine tune workflow: handy gibt vor wann denken prompt -> eeg wird gesndet verarebitet und mit übersetzung (dem vorgegebenen prompt) gespeihert in vs
+bei amnfrage wird similarity serach in multithread ermittelt O direkt model weiter ahand der daten trainieren.
+
+todo:
+pitch deck
+
+
 """
 
 import os
@@ -183,7 +197,7 @@ class EvaluateClassifierSummary(ModelSummary):
 
 class KBestSummary:
     def __init__(self, task_dir, save_ext="png"):
-        self.task_dir = task_dir
+        self.task_dir = task_dir # files.models
         self.save_ext = save_ext
         self.save_dir = os.path.join(task_dir, "Summary")
         os.makedirs(self.save_dir, exist_ok=True)
@@ -216,6 +230,7 @@ class KBestSummary:
 
     def plot(self, metrics=None):
         if metrics == "all":
+            print("self.results", self.results)
             metrics = self.results["Metric"].unique()
         elif not metrics:
             metrics = ["accuracy"]  # Default

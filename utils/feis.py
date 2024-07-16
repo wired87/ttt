@@ -288,6 +288,7 @@ class FEISDataLoader(DatasetLoader):
         return labels
 
     def flatten(self, features=None, labels=None, reshape=False, verbose=None):
+        print("FLATTENING...")
         verbose = verbose if verbose is not None else self.verbose
         features = features if features is not None else self.features
         labels = labels if labels is not None else self.extract_labels()
@@ -297,15 +298,16 @@ class FEISDataLoader(DatasetLoader):
             if reshape
             else features
         )
+        print("FFEATURES:", flattened_features)
         flattened_features = np.vstack(flattened_features)
         if not reshape:
             flattened_features = np.transpose(flattened_features, (0, 1, 3, 2))
-
+        print("NFFEATURES:", flattened_features)
         flattened_labels = np.tile(labels, len(features))
-
+        print("LABELS:", flattened_labels)
         if verbose:
             self.dataset_info(flattened_features, flattened_labels, verbose=verbose)
-
+        print("FINISHED...")
         return flattened_features, flattened_labels
 
     def create_progress_bar(self):

@@ -165,13 +165,13 @@ class KaraOneDataLoader(DatasetLoader):
             self.console.print(f"Subject: [purple]{subject}[/]")
             self.console.print(Rule())
 
-        data_dir = self.raw_data_dir
+        data_dir = self.raw_data_dir  # path to downloaded data
         print(f"DATA DIR {data_dir} subject {subject}")
 
-        eeglab_raw_filename = glob.glob(os.path.join(data_dir, subject, "*.set"))
+        eeglab_raw_filename = glob.glob(os.path.join(data_dir, subject, "*.set"))  # get all .set files from the dir
         print(f"FILENAME {eeglab_raw_filename}")
 
-        eeglab_raw_file = os.path.join(data_dir, subject, eeglab_raw_filename[0])
+        eeglab_raw_file = os.path.join(data_dir, subject, eeglab_raw_filename[0])  # why creating new dir with name of the first file?
         print(f"RAW FILE {eeglab_raw_file}")
 
         self.raw = mne.io.read_raw_eeglab(
@@ -221,6 +221,7 @@ class KaraOneDataLoader(DatasetLoader):
         Returns:
         - raw (mne.io.Raw): Raw data object containing the selected channels.
         """
+        print("PICKING CHANNELS FROM EEG")
         verbose = verbose if verbose is not None else self.verbose
 
         if channels == "all" or channels == [-1]:
@@ -240,6 +241,8 @@ class KaraOneDataLoader(DatasetLoader):
         if verbose:
             self.console.print(f"Raw data shape: [black]{self.raw.get_data().shape}[/]")
             self.console.print(Rule())
+
+        print("RAW DATA pick_channels", self.raw)
 
         return self.raw
 
@@ -341,6 +344,7 @@ class KaraOneDataLoader(DatasetLoader):
 
     def apply_bandpass_filter(self, l_freq=0.5, h_freq=50.0, verbose=None):
         """Filter the EEG data with a bandpass filter."""
+        print("APPLYING BANDPASS FILTER...")
         verbose = verbose if verbose is not None else self.verbose
         raw_data = mne.filter.filter_data(
             self.raw.get_data(),
@@ -350,6 +354,7 @@ class KaraOneDataLoader(DatasetLoader):
             verbose=verbose,
         )
         self.raw = mne.io.RawArray(raw_data, self.raw.info, verbose=verbose)
+        print("RETURN self.raw", self.raw)
         return self.raw
 
     def assemble_epochs(self, verbose=None):
@@ -475,10 +480,9 @@ class KaraOneDataLoader(DatasetLoader):
             self.progress.add_task("Applying Laplacian filter ...")
 
             for subject in self.subjects:
-                print("SUBJECT ", subject)
-                if not overwrite and os.path.exists(
-                    os.path.join(self.data_dir, subject, "raw.fif")
-                ):
+                print("SUBJECT: ", subject)
+                if not overwrite and os.path.exists(os.path.join(self.data_dir, subject, "raw.fif")):
+                    print("DATA ALREADY FILTERED...")
                     self.progress.update(task_subjects, advance=1)
                     continue
 
@@ -496,6 +500,7 @@ class KaraOneDataLoader(DatasetLoader):
         pick_channels="all",
         verbose=False,
     ):
+        print("PROCESSING EPOCHS...")
         self.verbose = verbose
         data_dir = data_dir or self.data_dir
         self.epoch_type = epoch_type
@@ -510,6 +515,7 @@ class KaraOneDataLoader(DatasetLoader):
             )
 
             for subject in self.subjects:
+                print(f"WORKON SUBJ {subject}")
                 self.load_data(data_dir, subject)
                 self.pick_channels(pick_channels)
 
@@ -518,7 +524,7 @@ class KaraOneDataLoader(DatasetLoader):
                 self.get_events()
                 self.make_epochs()
                 subject_epochs = self.epochs_apply_baseline_correction(baseline=(0, 0))
-
+                print(f"APPEND EPOCH {subject_epochs} TO all_epochs")
                 self.all_epochs.append(subject_epochs)
                 self.all_epoch_labels.append(epoch_labels)
                 self.progress.update(task_subjects, advance=1)
@@ -541,11 +547,12 @@ class KaraOneDataLoader(DatasetLoader):
     def extract_features(
         self,
         save_dir,
-        epoch_type=None,
+        epoch_type="thinking",
         length_factor=0.1,
         overlap=0.5,
         skip_if_exists=True,
     ):
+        print("EXTRACTING FEATURES...")
         epoch_type = epoch_type or self.epoch_type
         self.features_dir = save_dir
 
@@ -555,18 +562,18 @@ class KaraOneDataLoader(DatasetLoader):
                 total=len(self.subjects),
                 completed=1,
             )
+            print("task_subjects", task_subjects)
             task_features = self.progress.add_task(
                 f"Computing {epoch_type} features ..."
             )
-
+            print("task_subjects", task_subjects)
             for index, subject in enumerate(self.subjects):
                 if skip_if_exists:
-                    if os.path.exists(
-                        os.path.join(self.features_dir, subject, f"{epoch_type}.npy")
-                    ):
+                    if os.path.exists(os.path.join(self.features_dir, subject, f"{epoch_type}.npy")):
                         self.progress.update(task_subjects, advance=1)
+                        print("continue")
                         continue
-
+                print("subject", subject)
                 if epoch_type == "acoustic":
                     # Add a channel dimension to the audio data
                     subject_epochs = [
@@ -583,10 +590,13 @@ class KaraOneDataLoader(DatasetLoader):
                     select_facial = [0, 2, 4, 14, 15]
                     self.get_features_functions(subset=select_facial)
                     compute_features = self.compute_features
+
                 elif epoch_type in ["clearing", "thinking", "stimuli", "speaking"]:
                     subject_epochs = self.all_epochs[index].get_data(copy=True)
+                    print("SUBJECT EPOCHS", subject_epochs)
                     self.get_features_functions()
                     compute_features = self.compute_features_dask
+
                 else:
                     raise ValueError(
                         "Invalid epoch type. Choose from 'acoustic', 'facial', 'clearing', 'thinking', 'stimuli', 'speaking'."
@@ -600,6 +610,7 @@ class KaraOneDataLoader(DatasetLoader):
                     overlap,
                     task=task_features,
                 )
+                print("SUBJECT EPOCHS EXTRACTED:", features)
                 self.progress.reset(task_features)
                 self.save_features(subject, features, epoch_type=epoch_type)
                 self.progress.update(task_subjects, advance=1)
@@ -607,18 +618,24 @@ class KaraOneDataLoader(DatasetLoader):
     def compute_features_dask(
         self, epochs, epoch_type=None, length_factor=0.1, overlap=0.5, task=None
     ):
+        print("EXTRACTING...")
         windowed_epochs = np.asarray(
             [self.window_data(epoch, length_factor, overlap) for epoch in epochs]
         )
-
+        print("windowed_epochs", windowed_epochs)
         cluster = LocalCluster()
         client = Client(cluster)
 
         windowed_epochs_dask_future = client.scatter(windowed_epochs, broadcast=True)
+        print("windowed_epochs_dask_future", windowed_epochs_dask_future)
+
         windowed_epochs_dask = windowed_epochs_dask_future.result()
+        print("windowed_epochs_dask", windowed_epochs_dask)
         windowed_epochs_dask = da.from_array(
             windowed_epochs_dask, chunks=(1, -1, -1, -1)
         )
+        print("new windowed_epochs_dask", windowed_epochs_dask)
+
 
         feats_epochs_dask = da.stack(
             [
@@ -627,7 +644,10 @@ class KaraOneDataLoader(DatasetLoader):
             ],
             axis=-1,
         )
+        print("feats_epochs_dask", feats_epochs_dask)
+
         feats_epochs_dask_result = feats_epochs_dask.compute()
+        print("feats_epochs_dask_result", feats_epochs_dask_result)
 
         client.close()
         cluster.close()
@@ -636,6 +656,9 @@ class KaraOneDataLoader(DatasetLoader):
             [self.add_deltas(epoch) for epoch in feats_epochs_dask_result],
             dtype=np.float32,
         )
+
+        features = np.asarray(features, dtype=np.float32)
+        print("features", features)
 
         return features
 
@@ -713,17 +736,30 @@ class KaraOneDataLoader(DatasetLoader):
     def add_deltas(self, feats_array: np.ndarray):
         """Calculates the first-order delta and second-order delta (double delta) features
         and concatenate them horizontally to the input feature array.
-
-        The shape of the returned array is (n_windows - 2, n_features), with n_features
-        being three times the n_features in the input feats_array.
         """
+        shape_len = len(feats_array.shape)
 
-        deltas = np.diff(feats_array, axis=0)
-        double_deltas = np.diff(deltas, axis=0)
-        all_feats = np.concatenate(
-            (feats_array[:-2], deltas[:-1], double_deltas), axis=-1
-        )
+        if shape_len == 3:
+            n_windows, t, n_features = feats_array.shape
+        elif shape_len == 4:
+            n_windows, t, n_channels, n_features = feats_array.shape
+        else:
+            n_windows, t, n_channels, n_features, extra = feats_array.shape
+
+        if n_windows >= 3:  # Enough windows for both deltas
+            deltas = np.diff(feats_array, axis=0)
+            double_deltas = np.diff(deltas, axis=0)
+            all_feats = np.concatenate(
+                (feats_array[:-2], deltas[:-1], double_deltas), axis=-1
+            )
+        elif n_windows == 2:  # Enough for first-order delta only
+            deltas = np.diff(feats_array, axis=0)
+            all_feats = np.concatenate((feats_array[:-1], deltas), axis=-1)
+        else:  # Only one window, no deltas possible
+            all_feats = feats_array
+
         return all_feats
+
 
     def save_features(self, subject: str, features: np.ndarray, epoch_type: str = None):
         epoch_type = epoch_type or self.epoch_type
@@ -759,6 +795,7 @@ class KaraOneDataLoader(DatasetLoader):
         Returns:
         - features (np.ndarray): Features of shape (n.subjects, n.epochs, n.windows, n.features_per_window).
         """
+        print("EXTRACTING K1 FEATURES...")
         self.features = []
         features_dir = features_dir or self.features_dir
         epoch_type = epoch_type or self.epoch_type
@@ -766,8 +803,10 @@ class KaraOneDataLoader(DatasetLoader):
         self.get_features_functions()
 
         for subject in self.subjects:
+            print(f"GET SUBJECT DATA: {subject} ")
             filename = os.path.join(features_dir, subject, f"{epoch_type}.npy")
             if os.path.exists(filename):
+                print("ADDING FEATURES...")
                 subject_features = np.load(filename)
             else:
                 raise FileNotFoundError(f"File not found: {filename}")
@@ -791,6 +830,7 @@ class KaraOneDataLoader(DatasetLoader):
 
     def flatten(self, features=None, labels=None, reshape=False, verbose=None):
         """Flatten the features and concatenate labels"""
+        print("FLATTENING...")
         verbose = verbose if verbose is not None else self.verbose
         features = features if features is not None else self.features
         labels = labels if labels is not None else self.get_all_epoch_labels()
@@ -800,12 +840,17 @@ class KaraOneDataLoader(DatasetLoader):
             if reshape
             else features
         )
+        print("FFEATURES:", flattened_features)
+
         flattened_features = np.vstack(flattened_features)
+        print("NFFEATURES:", flattened_features)
 
         flattened_labels = np.concatenate(labels)
+        print("LABELS:", flattened_labels)
 
         if verbose:
             self.dataset_info(flattened_features, flattened_labels, verbose=verbose)
+        print("FINISHED...")
 
         return flattened_features, flattened_labels
 

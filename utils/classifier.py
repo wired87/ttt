@@ -2,6 +2,8 @@
 classifier.py
 Classifier Utility scripts
 """
+from typing import Dict
+
 from sklearn.svm import SVC
 import importlib.util
 import os
@@ -223,6 +225,7 @@ class ClassifierMixin:
         k_best = self.get_value(k_best, self.features_select_k_best)
 
         def fetch_score_func(score_func):
+            print("SET SCORE FUNC..")
             self.score_func = None
             if score_func == "pearsonr":
                 self.score_func = self.pearsonr_score
@@ -236,13 +239,22 @@ class ClassifierMixin:
             # Replace NaNs with a desired value (e.g., 0)
             item[np.isnan(item)] = 0
         print("ITEMS UPDATED...")
-        if k_best is not None:
+        if k_best is not None and isinstance(k_best, dict):
+            k: int = k_best["k"]
             fetch_score_func(k_best["score_func"])
             if self.score_func:
-                selector = SelectKBest(score_func=self.score_func, k="all")
+                selector = SelectKBest(score_func=self.score_func, k=k)
+                print("selector",selector)
+
                 X = selector.fit_transform(X, y)
+                print("X", X)
+
                 select_indices = selector.get_support(indices=True)
+                print("SELECT INICES:", select_indices)
+
                 self.features_names = self.features_names[select_indices]
+                print("self.features_names ", self.features_names)
+
 
         X_select = X[:, select] if select is not None else X
 
@@ -464,7 +476,7 @@ class RegularClassifier(ClassifierMixin):
         random_state=42,
         trial_size=None,
         features_names=None,
-        features_select_k_best=None,
+        features_select_k_best: Dict or None = None,
         verbose=False,
         console=None,
     ):

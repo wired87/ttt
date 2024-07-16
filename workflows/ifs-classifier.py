@@ -9,6 +9,8 @@ from typing import List
 
 from rich.console import Console
 
+from ttt.utils.karaone import KaraOneDataLoader
+
 sys.path.append(os.getcwd())
 from ttt.utils.config import Config, ConsoleHandler, fetch_classifier, fetch_dataset
 from ttt.utils.ifs import InformationSet
@@ -31,7 +33,7 @@ def main(args: Config):
         model_file = os.path.join(c_args["model_base_dir"], model, "model.py")
         Console().rule(title=f"[bold blue3][Model: {model}][/]", style="blue3")
 
-        dset = dataset(
+        dset = KaraOneDataLoader(  # ToDo just testing because str click was redirect to freis. (because this just nan values)
             raw_data_dir=d_args["raw_data_dir"],
             subjects=d_args["subjects"],
             verbose=True,
@@ -39,7 +41,8 @@ def main(args: Config):
         )
 
         dset.load_features(
-            epoch_type=d_args["epoch_type"], features_dir=d_args["features_dir"]
+            epoch_type=d_args["epoch_type"], # thinking
+            features_dir=d_args["features_dir"]
         )
         features, labels = dset.flatten()
 

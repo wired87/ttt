@@ -1,12 +1,12 @@
 # Configuration for Thought-to-Text Decoder Model
 
 _select:
-  classifier: RegularClassifier  # Start with evaluating existing models RegularClassifier, ClassifierGridSearch, EvaluateClassifier
+  classifier: RegularClassifier  #  RegularClassifier, ClassifierGridSearch, EvaluateClassifier
   dataset: KaraOne                # Choose your primary dataset
 
 classifier:
   features_select_k_best:
-    k: [5, 10, 15]                # Test multiple 'k' values for optimal feature selection
+    k: [5, 10, 15]
     score_func: f_classif         # Use ANOVA F-value for feature ranking
   model_base_dir: C:\Users\wired\OneDrive\Desktop\Projects\ttt\ttt\files\models    # Path to your trained models
   models: [model_1, model_2]      # List specific model folders within the base directory
@@ -21,7 +21,7 @@ feis:                     # FEIS dataset configuration (likely unused initially)
   raw_data_dir: files/Data/FEIS/data_eeg/
   subjects: all            # Start with all subjects for broader training
   tasks: [0]                # Only task 0 is available in FEIS
-
+  channels:
 karaone:                  # KaraOne dataset configuration (the focus)
   epoch_type: thinking      # Most relevant for thought-to-text
   features_dir: files/Features/KaraOne/features/
@@ -30,8 +30,8 @@ karaone:                  # KaraOne dataset configuration (the focus)
   overlap: 0.2             # Moderate overlap to capture transitions
   raw_data_dir: C:\Users\wired\OneDrive\Desktop\Projects\ttt\ttt\workflows\files\Data\KaraOne\EEG_raw #ttt/workflows/files/Data/KaraOne/EEG_raw/         # For raw data, if needed
   subjects: all            # Initial training on all subjects
-  tasks: [0, 1, 2, 3]       # Experiment with different KaraOne tasks
+  tasks: [0, 1]       # Experiment with different KaraOne tasks
   tfr_dataset_dir: files/TFR/KaraOne/tfr_ds-1/    # If using time-frequency representations
-
+  channels: []
 utils:
   path: /path/to/your/project/utils/
