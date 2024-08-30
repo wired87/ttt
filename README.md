@@ -7,7 +7,7 @@
 Imagined speech recognition through EEG signals
 
 # Original repo can be found [here](https://github.com/AshrithSagar/EEG-Imagined-speech-recognition) 
-## Pls take my version just as an example. - Im extremely new to this stuff
+## Completely set up and expanded the code basis
 ## Installation
 
 Follow these steps to get started.
